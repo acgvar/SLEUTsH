@@ -26,6 +26,7 @@
 #define MIN_BREED_VALUE 0.01
 #define MAX_BREED_VALUE 100.0
 #define MAX_ROAD_VALUE 100
+#define MAX_STATION_VALUE 100
 #define DIGITS_IN_YEAR 4
 #define LOW 0
 #define MED 1
@@ -48,6 +49,7 @@
 #define MIN_NGHBR_TO_SPREAD 2
 #define MAX_URBAN_YEARS 15
 #define MAX_ROAD_YEARS 15
+#define MAX_STATION_YEARS 15
 #define MAX_LANDUSE_YEARS 2
 #define RESTART_FILE "restart_file.data"
 #define BYTES_PER_WORD sizeof(PIXEL)

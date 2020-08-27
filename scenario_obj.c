@@ -235,6 +235,23 @@ int
 
 /******************************************************************************
 *******************************************************************************
+** FUNCTION NAME: scen_GetStationDataFileCount
+** PURPOSE:       return # station data files
+** AUTHOR:        Alvin C.G. Varquez & Sifan Dong
+** PROGRAMMER:    Alvin C.G. Varquez & Sifan Dong
+** CREATION DATE: 01/18/2019
+** DESCRIPTION:
+**
+**
+*/
+int
+  scen_GetStationDataFileCount ()
+{
+  return scenario.station_data_file_count;
+}
+
+/******************************************************************************
+*******************************************************************************
 ** FUNCTION NAME: scen_GetLanduseDataFileCount
 ** PURPOSE:       return # landuse data files
 ** AUTHOR:        Keith Clarke
@@ -299,6 +316,23 @@ char *
   scen_GetRoadDataFilename (int i)
 {
   return scenario.road_data_file[i];
+}
+
+/******************************************************************************
+*******************************************************************************
+** FUNCTION NAME: scen_GetStationDataFilename
+** PURPOSE:       return station data filename by index, i
+** AUTHOR:        Keith Clarke
+** PROGRAMMER:    Tommy E. Cathey of NESC (919)541-1500
+** CREATION DATE: 11/11/1999
+** DESCRIPTION:
+**
+**
+*/
+char *
+  scen_GetStationDataFilename (int i)
+{
+  return scenario.station_data_file[i];
 }
 
 /******************************************************************************
@@ -1719,6 +1753,7 @@ static void
   scenario.num_landuse_classes = 0;
   scenario.urban_data_file_count = 0;
   scenario.road_data_file_count = 0;
+  scenario.station_data_file_count = 0;
   scenario.landuse_data_file_count = 0;
   scenario.probability_color_count = 0;
   strcpy (scenario.whirlgif_binary, "");
@@ -1776,6 +1811,14 @@ static void
           index = scenario.road_data_file_count;
           strcpy (scenario.road_data_file[index], object_ptr);
           scenario.road_data_file_count++;
+        }
+        else if (!strcmp (keyword, "STATION_DATA"))
+        {
+          object_ptr = strtok (NULL, " \n");
+          util_trim (object_ptr);
+          index = scenario.station_data_file_count;
+          strcpy (scenario.station_data_file[index], object_ptr);
+          scenario.station_data_file_count++;
         }
         else if (!strcmp (keyword, "URBAN_DATA"))
         {
@@ -2452,6 +2495,11 @@ void
   {
     fprintf (fp, "scenario.road_data_file[%u] = %s\n",
              index, scenario.road_data_file[index]);
+  }
+  for (index = 0; index < scenario.station_data_file_count; index++)
+  {
+    fprintf (fp, "scenario.station_data_file[%u] = %s\n",
+             index, scenario.station_data_file[index]);
   }
   for (index = 0; index < scenario.landuse_data_file_count; index++)
   {

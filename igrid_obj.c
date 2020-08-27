@@ -396,6 +396,33 @@ GRID_P
 
 /******************************************************************************
 *******************************************************************************
+** FUNCTION NAME: igrid_GetStationGridPtr
+** PURPOSE:       return ptr to station grid data
+** AUTHOR:        Alvin C.G. Varquez & Sifan Dong
+** PROGRAMMER:    Alvin C.G. Varquez & Sifan Dong
+** CREATION DATE: 01/18/2019
+** DESCRIPTION:   if the data is packed then we need to allocate space to 
+**                hold the unpacked data and then unpack it.
+*/
+GRID_P
+  igrid_GetStationGridPtr (char *file, char *fun, int line, int index)
+{
+  GRID_P ptr;
+#ifdef PACKING
+  ptr = mem_GetWGridPtr (file, fun, line);
+  _unpack ((char *) igrid.station[index].ptr,
+           ptr,
+           total_pixels,
+           -1);
+
+#else
+  ptr = igrid.station[index].ptr;
+#endif
+  return ptr;
+}
+
+/******************************************************************************
+*******************************************************************************
 ** FUNCTION NAME: igrid_GetUrbanGridPtrByYear
 ** PURPOSE:       return ptr to urban grid data by year
 ** AUTHOR:        Keith Clarke
@@ -468,6 +495,44 @@ GRID_P
 
 #else
   ptr = igrid.road[i].ptr;
+#endif
+  return ptr;
+}
+
+/******************************************************************************
+*******************************************************************************
+** FUNCTION NAME: igrid_GetStationGridPtrByYear
+** PURPOSE:       return ptr to station grid data by year
+** AUTHOR:        Alvin C.G. Varquez & Sifan Dong
+** PROGRAMMER:    Alvin C.G. Varquez & Sifan Dong
+** CREATION DATE: 01/18/2019
+** DESCRIPTION:   if the data is packed then we need to allocate space to
+**                hold the unpacked data and then unpack it.
+**
+*/
+GRID_P
+  igrid_GetStationGridPtrByYear (char *file, char *fun, int line, int year)
+{
+  GRID_P ptr;
+  int i;
+
+  for (i = igrid.station_count - 1; i > 0; i--)
+  {
+    if (year >= igrid.station[i].year.digit)
+    {
+      break;
+    }
+  }
+
+#ifdef PACKING
+  ptr = mem_GetWGridPtr (file, fun, line);
+  _unpack ((char *) igrid.station[i].ptr,
+           ptr,
+           total_pixels,
+           -1);
+
+#else
+  ptr = igrid.station[i].ptr;
 #endif
   return ptr;
 }
@@ -1119,6 +1184,15 @@ void
     grid_histogram (&igrid.road[i]);
   }
 
+  for (i = 0; i < igrid.station_count; i++)
+  {
+    igrid.station[i].ptr = mem_GetIGridPtr (func);
+    igrid_ReadGrid (igrid.station[i].filename,
+                    scratch_pad, igrid.station[i].ptr);
+    grid_SetMinMax (&igrid.station[i]);
+    grid_histogram (&igrid.station[i]);
+  }
+
   for (i = 0; i < igrid.landuse_count; i++)
   {
     igrid.landuse[i].ptr = mem_GetIGridPtr (func);
@@ -1292,6 +1366,40 @@ static void
   }
   igrid.road_count = j;
 
+  j = 0;
+  for (i = 0; i < scen_GetStationDataFileCount (); i++)
+  {
+    strcpy (buf, scen_GetStationDataFilename (i));
+    strtok (buf, ".");
+    strtok (NULL, ".");
+    this_year_str = strtok (NULL, ".");
+    this_year = atoi (this_year_str);
+    if (proc_GetProcessingType () == PREDICTING)
+    {
+      if ((this_year >= start_year) | (i = scen_GetStationDataFileCount () - 1))
+      {
+        strcpy (igrid.station[j].filename, scen_GetInputDir ());
+        strcat (igrid.station[j].filename, scen_GetStationDataFilename (i));
+        igrid_SetGridSizes (&igrid.station[j]);
+        strcpy (igrid.station[j].year.string, this_year_str);
+        igrid.station[j].year.digit = this_year;
+        igrid.station[j].packed = packed;
+        j++;
+      }
+    }
+    else
+    {
+      strcpy (igrid.station[j].filename, scen_GetInputDir ());
+      strcat (igrid.station[j].filename, scen_GetStationDataFilename (i));
+      igrid_SetGridSizes (&igrid.station[j]);
+      strcpy (igrid.station[j].year.string, this_year_str);
+      igrid.station[j].year.digit = this_year;
+      igrid.station[j].packed = packed;
+      j++;
+    }
+  }
+  igrid.station_count = j;
+
   for (i = 0; i < scen_GetLanduseDataFileCount (); i++)
   {
     strcpy (buf, scen_GetLanduseDataFilename (i));
@@ -1334,6 +1442,7 @@ static void
 
   igrid_count = igrid.urban_count +
     igrid.road_count +
+    igrid.station_count +
     igrid.landuse_count +
     igrid.excluded_count +
     igrid.slope_count +
@@ -1460,6 +1569,18 @@ void
              igrid.road[i].max,
              igrid.road[i].filename);
   }
+  fprintf (fp, "  Station GIFs\n");
+  fprintf (fp, "      rowXcol cb bpp path\n");
+  for (i = 0; i < igrid.station_count; i++)
+  {
+    sprintf (buf, "%uX%u", igrid.station[i].nrows, igrid.station[i].ncols);
+    fprintf (fp, "    %9s  %u  %u  %3u %3u %s\n", buf,
+             igrid.station[i].color_bits,
+             igrid.station[i].bits_per_pixel,
+             igrid.station[i].min,
+             igrid.station[i].max,
+             igrid.station[i].filename);
+  }
   fprintf (fp, "  Landuse GIFs\n");
   fprintf (fp, "      rowXcol cb bpp path\n");
   for (i = 0; i < igrid.landuse_count; i++)
@@ -1563,6 +1684,14 @@ if(strcmp(my_location,igrid.location) != 0)                  \
       all_sizes_the_same = FALSE;
     }
     CHECK_LOCATION (igrid.road[i].filename);
+  }
+  for (i = 0; i < igrid.station_count; i++)
+  {
+    if ((rows != igrid.station[i].nrows) || (cols != igrid.station[i].ncols))
+    {
+      all_sizes_the_same = FALSE;
+    }
+    CHECK_LOCATION (igrid.station[i].filename);
   }
   for (i = 0; i < igrid.landuse_count; i++)
   {
@@ -1791,6 +1920,30 @@ BOOLEAN
   for (i = 0; i < igrid.road_count; i++)
   {
     if (igrid.road[i].year.digit == year)
+      return TRUE;
+  }
+  return FALSE;
+}
+
+/******************************************************************************
+*******************************************************************************
+** FUNCTION NAME: igrid_TestForStationYear
+** PURPOSE:       test if year is a station year
+** AUTHOR:        Alvin C.G. Varquez & Sifan Dong
+** PROGRAMMER:    Alvin C.G. Varquez & Sifan Dong
+** CREATION DATE: 01/18/2019
+** DESCRIPTION:
+**
+**
+*/
+BOOLEAN
+  igrid_TestForStationYear (int year)
+{
+  int i;
+
+  for (i = 0; i < igrid.station_count; i++)
+  {
+    if (igrid.station[i].year.digit == year)
       return TRUE;
   }
   return FALSE;

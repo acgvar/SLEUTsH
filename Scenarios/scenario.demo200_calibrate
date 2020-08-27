@@ -222,6 +222,12 @@ URBAN_DATA= demo200.urban.1930.gif
 URBAN_DATA= demo200.urban.1950.gif 
 URBAN_DATA= demo200.urban.1970.gif 
 URBAN_DATA= demo200.urban.1990.gif 
+#
+# Station data GIFs
+# format: <location>.station.<data>.[<user info>].gif
+#
+STATION_DATA = demo200.station.1970.gif
+STATION_DATA = demo200.station.1990.gif
 # 
 # Road data GIFs 
 #  format:  <location>.roads.<date>.[<user info>].gif 

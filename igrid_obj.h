@@ -10,6 +10,7 @@ typedef struct
    char       location[MAX_FILENAME_LEN];
    int        urban_count;
    int        road_count;
+   int        station_count;
    int        landuse_count;
    int        excluded_count;
    int        slope_count;
@@ -17,6 +18,7 @@ typedef struct
 
    grid_info   urban[MAX_URBAN_YEARS];
    grid_info   road[MAX_ROAD_YEARS];
+   grid_info   station[MAX_STATION_YEARS];
    grid_info   landuse[MAX_LANDUSE_YEARS];
    grid_info   excluded;
    grid_info   slope;
@@ -48,6 +50,8 @@ GRID_P igrid_GetUrbanGridPtr(char* file, char* fun,int line, int index);
 GRID_P igrid_GetUrbanGridPtrByYear(char* file, char* fun,int line, int year);
 GRID_P igrid_GetRoadGridPtr(char* file, char* fun,int line, int index);
 GRID_P igrid_GetRoadGridPtrByYear(char* file, char* fun,int line, int year);
+GRID_P igrid_GetStationGridPtr(char* file, char* fun,int line, int index);
+GRID_P igrid_GetStationGridPtrByYear(char* file, char* fun,int line, int year);
 GRID_P igrid_GetLanduseGridPtr(char* file, char* fun,int line, int index);
 GRID_P igrid_GetSlopeGridPtr(char* file, char* fun,int line);
 GRID_P igrid_GetExcludedGridPtr(char* file, char* fun,int line);

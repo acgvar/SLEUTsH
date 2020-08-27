@@ -71,6 +71,7 @@ static void
                 GRID_P slp,                                  /* IN     */
                 GRID_P excld,                                /* IN     */
                 GRID_P roads,                                /* IN     */
+                GRID_P stations,                                /* IN     */
                 SWGHT_TYPE * swght,                          /* IN     */
                 int *rt,                                     /* IN/OUT */
                 GRID_P workspace);                         /* MOD    */
@@ -89,6 +90,14 @@ static
                          int *i_road_end,                    /* OUT    */
                          int *j_road_end,                    /* OUT    */
                          GRID_P roads,                       /* IN     */
+                         double diffusion_coefficient);    /* IN     */
+static
+  BOOLEAN spr_station_search (int i_road_start,                   /* IN     */
+                         int j_road_start,                   /* IN     */
+                         int *i_road_end,                    /* OUT    */
+                         int *j_road_end,                    /* OUT    */
+                         GRID_P roads,                       /* IN     */
+                         GRID_P stations,                       /* IN     */
                          double diffusion_coefficient);    /* IN     */
 static
   BOOLEAN spr_urbanize_nghbr (int i,                         /* IN     */
@@ -340,6 +349,8 @@ static void
 ** DESCRIPTION:
 **
 **
+** REVISION:	  Alvin C.G. Varquez & Sifan Dong
+** REVISION DATE: 01/17/2019
 */
 static void
   spr_phase5 (COEFF_TYPE road_gravity,                       /* IN     */
@@ -350,6 +361,7 @@ static void
               GRID_P slp,                                    /* IN     */
               GRID_P excld,                                  /* IN     */
               GRID_P roads,                                  /* IN     */
+              GRID_P stations,                                  /* IN     */
               SWGHT_TYPE * swght,                            /* IN     */
               int *rt,                                       /* IN/OUT */
               GRID_P workspace)                            /* MOD    */
@@ -361,6 +373,12 @@ static void
   int growth_count;
   int *growth_row;
   int *growth_col;
+  int walkabout_row[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
+  int walkabout_col[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
+  int urb_count;
+  int row_nghbr;
+  int col_nghbr;
+  int pixel;
   int max_search_index;
   int growth_index;
   BOOLEAN road_found;
@@ -389,6 +407,7 @@ static void
   assert (slp != NULL);
   assert (excld != NULL);
   assert (roads != NULL);
+  assert (stations != NULL);
   assert (swght != NULL);
   assert (rt != NULL);
   assert (workspace != NULL);
@@ -480,6 +499,10 @@ static void
        * IF THERE'S A ROAD FOUND THEN WALK ALONG IT
        *
        */
+      /*
+       * THE FOLLOWING SECTION IS MODIFIED TO STOP ROAD
+       * WALK WHEN A STATION WITH A CERTAIN VALUE IS FOUND.
+       */
       if (road_found)
       {
         spread = spr_road_walk (i_rd_start,                  /* IN     */
@@ -521,6 +544,109 @@ static void
                                     PHASE5G,                 /* IN     */
                                     rt);                   /* IN/OUT */
 
+            }
+          }
+        }
+      }
+      /* PROCESS FOR TOD BEGINS HERE
+       *
+       * RANDOMLY SELECT A GROWTH PIXEL TO START SEARCH
+       * FOR ROAD
+       *
+       */
+      growth_index = (int) ((double) growth_count * RANDOM_FLOAT);
+
+      /*
+       *
+       * SEARCH FOR ROAD ABOUT THIS GROWTH POINT
+       *
+       */
+      road_found =
+        spr_road_search (growth_row[growth_index],
+                         growth_col[growth_index],
+                         &i_rd_start,
+                         &j_rd_start,
+                         max_search_index,
+                         roads);
+
+      /*
+       *
+       * IF THERE'S A ROAD FOUND THEN WALK ALONG IT
+       *
+       */
+      /*
+       * THE FOLLOWING SECTION IS MODIFIED TO STOP ROAD
+       * WALK WHEN A STATION WITH A CERTAIN VALUE IS FOUND.
+       */
+      if (road_found)
+      {
+        spread = spr_station_search (i_rd_start,                  /* IN     */
+                                j_rd_start,                  /* IN     */
+                                &i_rd_end,                   /* OUT    */
+                                &j_rd_end,                   /* OUT    */
+                                roads,                       /* IN     */
+				stations,                    /* IN     */
+                                diffusion_coefficient);    /* IN     */
+
+        if (spread == TRUE)
+        {
+          urbanized =
+            spr_urbanize_nghbr (i_rd_end,                    /* IN     */
+                                j_rd_end,                    /* IN     */
+                                &i_rd_end_nghbr,             /* OUT    */
+                                &j_rd_end_nghbr,             /* OUT    */
+                                z,                           /* IN     */
+                                delta,                       /* IN/OUT */
+                                slp,                         /* IN     */
+                                excld,                       /* IN     */
+                                swght,                       /* IN     */
+                                PHASE5G,                     /* IN     */
+                                rt);                       /* IN/OUT */
+          if (urbanized)
+          {
+            max_tries = 100;
+            for (tries = 0; tries < max_tries; tries++)
+            {
+              urbanized =
+                spr_urbanize_nghbr (i_rd_end_nghbr,          /* IN     */
+                                    j_rd_end_nghbr,          /* IN     */
+                                    &i_rd_end_nghbr_nghbr,   /* OUT    */
+                                    &j_rd_end_nghbr_nghbr,   /* OUT    */
+                                    z,                       /* IN     */
+                                    delta,                   /* IN/OUT */
+                                    slp,                     /* IN     */
+                                    excld,                   /* IN     */
+                                    swght,                   /* IN     */
+                                    PHASE5G,                 /* IN     */
+                                    rt);                   /* IN/OUT */
+               if ((z[OFFSET (i_rd_end_nghbr_nghbr,j_rd_end_nghbr_nghbr)] > 0) &&
+                   (RANDOM_INT (101) < 90))
+               {
+                 /*
+                  * EXAMINE THE EIGHT CELL NEIGHBORS
+                  * SPREAD AT RANDOM IF AT LEAST TWO ARE URBAN
+                  * PIXEL ITSELF MUST BE URBAN (3)
+                  *
+                  */
+                 urb_count = util_count_neighbors (z, i_rd_end_nghbr_nghbr, j_rd_end_nghbr_nghbr, GT, 0);
+                 if ((urb_count >= 2) && (urb_count < 8))
+                 {
+                   pixel = RANDOM_INT (2);
+
+                   row_nghbr = i_rd_end_nghbr_nghbr + walkabout_row[pixel];
+                   col_nghbr = j_rd_end_nghbr_nghbr + walkabout_col[pixel];
+
+                   spr_urbanize (row_nghbr,                           /* IN     */
+                                 col_nghbr,                           /* IN     */
+                                 z,                                   /* IN     */
+                                 delta,                               /* IN/OUT */
+                                 slp,                                 /* IN     */
+                                 excld,                               /* IN     */
+                                 swght,                               /* IN     */
+                                 PHASE5G,                             /* IN     */
+                                 rt);                               /* IN/OUT */
+                 }
+               }
             }
           }
         }
@@ -950,6 +1076,84 @@ static
 
 /******************************************************************************
 *******************************************************************************
+** FUNCTION NAME: spr_station_search
+** PURPOSE:       perform station search
+** AUTHOR:        Alvin C.G. Varquez & Sifan Dong
+** PROGRAMMER:    Alvin C.G. Varquez & Sifan Dong
+** CREATION DATE: 01/18/2019
+** DESCRIPTION:
+**
+**
+*/
+static
+    BOOLEAN
+  spr_station_search (int i_road_start,                           /* IN     */
+                 int j_road_start,                           /* IN     */
+                 int *i_road_end,                            /* OUT    */
+                 int *j_road_end,                            /* OUT    */
+                 GRID_P roads,                               /* IN     */
+                 GRID_P stations,                               /* IN     */
+                 double diffusion_coefficient)             /* IN     */
+{
+  char func[] = "spr_station_search";
+  int i;
+  int j;
+  int i_nghbr;
+  int j_nghbr;
+  int k;
+  BOOLEAN end_of_road;
+  BOOLEAN spread = FALSE;
+  int run_value;
+  int run = 0;
+
+  FUNC_INIT;
+  assert (i_road_end != NULL);
+  assert (j_road_end != NULL);
+  assert (roads != NULL);
+
+  i = i_road_start;
+  j = j_road_start;
+  end_of_road = FALSE;
+  while (!end_of_road)
+  {
+    end_of_road = TRUE;
+    util_get_next_neighbor (i, j, &i_nghbr, &j_nghbr, RANDOM_INT (8));
+    for (k = 0; k < 8; k++)
+    {
+      if (IMAGE_PT (i_nghbr, j_nghbr))
+      {
+        if (roads[OFFSET (i_nghbr, j_nghbr)])
+        {
+          end_of_road = FALSE;
+          if (stations[OFFSET (i_nghbr, j_nghbr)]>0)
+          {
+          end_of_road = TRUE;
+          spread = TRUE;
+          (*i_road_end) = i_nghbr;
+          (*j_road_end) = j_nghbr;
+          break;
+          }
+          run++;
+          i = i_nghbr;
+          j = j_nghbr;
+          break;
+        }
+      }
+      util_get_next_neighbor (i, j, &i_nghbr, &j_nghbr, -1);
+    }
+    run_value = (int) (roads[OFFSET (i, j)] / MAX_ROAD_VALUE *
+                       diffusion_coefficient);
+    if (run > run_value)
+    {
+      end_of_road = TRUE;
+    }
+  }
+  FUNC_END;
+  return spread;
+}
+
+/******************************************************************************
+*******************************************************************************
 ** FUNCTION NAME: spr_road_search
 ** PURPOSE:       perform road search
 ** AUTHOR:        Keith Clarke
@@ -1141,6 +1345,7 @@ void
   COEFF_TYPE spread_coefficient;
   GRID_P excld;
   GRID_P roads;
+  GRID_P stations;
   GRID_P slp;
   GRID_P scratch_gif1;
   GRID_P scratch_gif3;
@@ -1157,6 +1362,8 @@ void
   excld = igrid_GetExcludedGridPtr (__FILE__, func, __LINE__);
   roads = igrid_GetRoadGridPtrByYear (__FILE__, func,
                                       __LINE__, proc_GetCurrentYear ());
+  stations = igrid_GetStationGridPtrByYear (__FILE__, func,
+                                      __LINE__, proc_GetCurrentYear ());
   slp = igrid_GetSlopeGridPtr (__FILE__, func, __LINE__);
   FUNC_INIT;
   assert (road_gravity > 0.0);
@@ -1166,6 +1373,7 @@ void
   assert (z != NULL);
   assert (excld != NULL);
   assert (roads != NULL);
+  assert (stations != NULL);
   assert (slp != NULL);
   assert (scratch_gif1 != NULL);
   assert (scratch_gif3 != NULL);
@@ -1248,7 +1456,8 @@ void
               delta,                                         /* IN/OUT */
               slp,                                           /* IN     */
               excld,                                         /* IN     */
-              roads,                                         /* IN     */
+	      roads,                                         /* IN     */
+              stations,                                         /* IN     */
               swght,                                         /* IN     */
               rt,                                            /* IN/OUT */
               scratch_gif3);                               /* MOD    */
@@ -1294,6 +1503,7 @@ void
   }
 
   roads = igrid_GridRelease (__FILE__, func, __LINE__, roads);
+  stations = igrid_GridRelease (__FILE__, func, __LINE__, stations);
   excld = igrid_GridRelease (__FILE__, func, __LINE__, excld);
   slp = igrid_GridRelease (__FILE__, func, __LINE__, slp);
   scratch_gif1 = mem_GetWGridFree (__FILE__, func, __LINE__, scratch_gif1);

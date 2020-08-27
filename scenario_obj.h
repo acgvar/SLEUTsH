@@ -5,6 +5,7 @@
 #define SCEN_MAX_FILENAME_LEN 256
 #define SCEN_MAX_URBAN_YEARS 20
 #define SCEN_MAX_ROAD_YEARS 20
+#define SCEN_MAX_STATION_YEARS 20
 #define SCEN_MAX_LANDUSE_YEARS 2
 #define SCEN_MAX_LANDUSE_CLASSES 256
 
@@ -48,6 +49,8 @@ typedef struct
   int urban_data_file_count;
   char road_data_file[SCEN_MAX_ROAD_YEARS][SCEN_MAX_FILENAME_LEN];
   int road_data_file_count;
+  char station_data_file[SCEN_MAX_STATION_YEARS][SCEN_MAX_FILENAME_LEN];
+  int station_data_file_count;
   char landuse_data_file[SCEN_MAX_LANDUSE_YEARS][SCEN_MAX_FILENAME_LEN];
   int landuse_data_file_count;
   char excluded_data_file[SCEN_MAX_FILENAME_LEN];
@@ -125,10 +128,12 @@ char* scen_GetWhirlgifBinary ();
 char* scen_GetInputDir();
 int   scen_GetUrbanDataFileCount();
 int   scen_GetRoadDataFileCount();
+int   scen_GetStationDataFileCount();
 int   scen_GetLanduseDataFileCount();
 int   scen_GetDoingLanduseFlag();
 char* scen_GetUrbanDataFilename(int i);
 char* scen_GetRoadDataFilename(int i);
+char* scen_GetStationDataFilename(int i);
 char* scen_GetLanduseDataFilename(int i);
 char* scen_GetExcludedDataFilename();
 char* scen_GetSlopeDataFilename();
