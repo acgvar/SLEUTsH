@@ -795,7 +795,7 @@ void
 {
   char func[] = "util_WriteZProbGrid";
   char filename[MAX_FILENAME_LEN];
-  char date_str[0];
+  char date_str[2];
   int lower_bounds[MAX_PROBABILITY_COLORS];
   int upper_bounds[MAX_PROBABILITY_COLORS];
   int indices[MAX_PROBABILITY_COLORS];

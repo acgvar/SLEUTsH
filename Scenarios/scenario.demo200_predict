@@ -120,7 +120,7 @@ RANDOM_SEED=1
 #  control_stats.log file. The input per run may be associated across 
 #  files using the 'index' number in the files' first column. 
 # 
-MONTE_CARLO_ITERATIONS=10
+MONTE_CARLO_ITERATIONS=1000
 
 # VIII. COEFFICIENTS 
 # The coefficients effect how the growth rules are applied to the data.
@@ -184,11 +184,17 @@ CALIBRATION_ROAD_START=      1
 CALIBRATION_ROAD_STEP=       1 
 CALIBRATION_ROAD_STOP=       1
 
-PREDICTION_DIFFUSION_BEST_FIT=  2
-PREDICTION_BREED_BEST_FIT=  5
-PREDICTION_SPREAD_BEST_FIT=  20 
-PREDICTION_SLOPE_BEST_FIT=  51 
-PREDICTION_ROAD_BEST_FIT=  5 
+PREDICTION_DIFFUSION_BEST_FIT=  1
+PREDICTION_BREED_BEST_FIT=  20
+PREDICTION_SPREAD_BEST_FIT=  10
+PREDICTION_SLOPE_BEST_FIT=  10
+PREDICTION_ROAD_BEST_FIT=  20
+
+#PREDICTION_DIFFUSION_BEST_FIT=  2
+#PREDICTION_BREED_BEST_FIT=  5
+#PREDICTION_SPREAD_BEST_FIT=  20 
+#PREDICTION_SLOPE_BEST_FIT=  51 
+#PREDICTION_ROAD_BEST_FIT=  5
 
 # IX. PREDICTION DATE RANGE 
 # The urban and road images used to initialize growth during 
@@ -200,7 +206,7 @@ PREDICTION_ROAD_BEST_FIT=  5
 # used. The prediction run will terminate at PREDICTION_STOP_DATE. 
 # 
 PREDICTION_START_DATE=1990 
-PREDICTION_STOP_DATE=2010
+PREDICTION_STOP_DATE=2030
 
 # X. INPUT IMAGES 
 # The model expects grayscale, GIF image files with file name 
@@ -226,8 +232,8 @@ URBAN_DATA= demo200.urban.1990.gif
 # Station data GIFs
 # format: <location>.station.<data>.[<user info>].gif
 #
-STATION_DATA = demo200.station.1970.gif
-STATION_DATA = demo200.station.1990.gif
+STATION_DATA= demo200.station.1985.gif
+STATION_DATA= demo200.station.1990.gif
 # 
 # Road data GIFs 
 #  format:  <location>.roads.<date>.[<user info>].gif 
@@ -240,8 +246,8 @@ ROAD_DATA= demo200.roads.1990.gif
 # Landuse data GIFs 
 #  format:  <location>.landuse.<date>.[<user info>].gif 
 # 
-LANDUSE_DATA= demo200.landuse.1930.gif 
-LANDUSE_DATA= demo200.landuse.1990.gif 
+#LANDUSE_DATA= demo200.landuse.1930.gif 
+#LANDUSE_DATA= demo200.landuse.1990.gif 
 # 
 # Excluded data GIF 
 #  format:  <location>.excluded.[<user info>].gif 

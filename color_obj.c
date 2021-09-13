@@ -332,7 +332,7 @@ void
   int i;
   int color_val;
   char zeroes[] = "000000";
-  char color_str[6];
+  char color_str[9];
   char hex_str[6];
 
   fprintf (fp,

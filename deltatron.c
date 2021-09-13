@@ -416,7 +416,7 @@ static
 {
   char func[] = "delta_phase2";
   char gif_filename[256];
-  char date_str[5];
+  char date_str[11];
   int i;
   int j;
   int k;

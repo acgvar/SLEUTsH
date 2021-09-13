@@ -70,7 +70,7 @@ void
 {
   char func[] = "grw_grow";
   char gif_filename[MAX_FILENAME_LEN];
-  char date_str[5];
+  char date_str[11];
   GRID_P deltatron_ptr;
   GRID_P seed_ptr;
   int total_pixels;
